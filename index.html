@@ -242,6 +242,7 @@ function enableSortable() {
 
   wrongLog.forEach((w, i) => {
     const formattedQuestion = (w.question || '（題目資料遺失）').replace(/\n/g, '<br>');
+    const formattedSubQuestion = (w.sub_question || '').replace(/\n/g, '<br>'); // 取得 sub_question
     const formattedExplanation = (w.explanation || '').replace(/\n/g, '<br>');
     const yourAnswer = w.yourAnswer || '(沒作答)';
     const correctAnswer = w.answer || '(無資料)';
@@ -260,6 +261,7 @@ function enableSortable() {
 
     html += `<div style="margin-bottom: 1em; border-bottom: 1px solid #ccc; padding-bottom: 1em;">
       <p><b>${i + 1}.</b> ${formattedQuestion}</p>
+      ${formattedSubQuestion ? `<p style="margin-left:1em; font-style: italic; color: #555;">${formattedSubQuestion}</p>` : ''}
       <p><b>選項：</b><br>${optionsHtml}</p>
       <p>你答：${yourAnswerHtml}</p>
       <p>正確：${correctAnswer}</p>
@@ -271,6 +273,7 @@ function enableSortable() {
   html += `<button onclick="resetQuiz()">再來一次</button>`;
   div.innerHTML = html;
 }
+
 
 
 
