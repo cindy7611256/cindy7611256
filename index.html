@@ -4,25 +4,37 @@
   <meta charset="UTF-8" />
   <title>Python 題庫系統</title>
   <style>
-  button {
-    padding: 12px 24px;
-    font-size: 16px;
-    width: 100%;
-    max-width: 300px;
-    display: block;
-    margin: 1em auto;
-    border-radius: 8px;
-    background-color: #4CAF50;
-    color: white;
-    border: none;
-    cursor: pointer;
-  }
-
-  button:hover {
-    background-color: #45a049;
-  }
-</style>
-
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      width: 100%;
+      max-width: 300px;
+      display: block;
+      margin: 1em auto;
+      border-radius: 8px;
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #45a049;
+    }
+    .sortable-list {
+      list-style: none;
+      padding: 0;
+    }
+    .sortable-item {
+      background: #eee;
+      margin: 4px 0;
+      padding: 8px;
+      border-radius: 4px;
+      cursor: grab;
+    }
+    .sortable-item.dragging {
+      opacity: 0.5;
+    }
+  </style>
 </head>
 <body>
   <h1>Python 題庫練習</h1>
@@ -36,7 +48,7 @@
 
   <script>
     const spreadsheetId = '1Z2cLu7on9Xwx7upG5ojj-PWr76E8QvPCmFSev9QuTVU';
-    const apiKey = 'AIzaSyBGWm6KJloQe_VWVFlvQNXI1naHFLxLoxA'; // 請替換成你自己的API Key
+    const apiKey = 'AIzaSyBGWm6KJloQe_VWVFlvQNXI1naHFLxLoxA'; // 改成你自己的 API Key
     const maxQuestions = 40;
 
     let questions = [];
@@ -60,20 +72,19 @@
     }
 
     async function startQuiz() {
-  const sel = document.getElementById('sheetSelector').value;
-  let arr = [];
-  if (sel === 'ALL') {
-    const a1 = await loadSheet('ITS Python 國際認證題庫 (一)');
-    const a2 = await loadSheet('ITS Python 國際認證題庫 (二)');
-    arr = a1.map(q => ({ ...q, sourceSheet: 'ITS Python 國際認證題庫 (一)' }))
-      .concat(a2.map(q => ({ ...q, sourceSheet: 'ITS Python 國際認證題庫 (二)' })));
-  } else {
-    arr = (await loadSheet(sel)).map(q => ({ ...q, sourceSheet: sel }));
-  }
-  questions = arr;
-  resetQuiz();
-}
-
+      const sel = document.getElementById('sheetSelector').value;
+      let arr = [];
+      if (sel === 'ALL') {
+        const a1 = await loadSheet('ITS Python 國際認證題庫 (一)');
+        const a2 = await loadSheet('ITS Python 國際認證題庫 (二)');
+        arr = a1.map(q => ({ ...q, sourceSheet: 'ITS Python 國際認證題庫 (一)' }))
+                .concat(a2.map(q => ({ ...q, sourceSheet: 'ITS Python 國際認證題庫 (二)' })));
+      } else {
+        arr = (await loadSheet(sel)).map(q => ({ ...q, sourceSheet: sel }));
+      }
+      questions = arr;
+      resetQuiz();
+    }
 
     function resetQuiz() {
       wrongLog = [];
@@ -81,7 +92,7 @@
       queue = questions
         .map((q, i) => ({ ...q, _id: i }))
         .sort(() => 0.5 - Math.random())
-        .slice(0, maxQuestions); // 只取前 maxQuestions 題
+        .slice(0, maxQuestions);
       nextQuestion();
     }
 
@@ -96,144 +107,104 @@
     }
 
     function showQuestion(q, seq) {
-  const div = document.getElementById('quiz');
-  const formattedQuestion = q.question.replace(/\n/g, '<br>');
-  const subQ = q.sub_question ? `<pre style="white-space: pre-wrap;">${q.sub_question}</pre>` : '';
-  const questionText = `<p><b>第${seq}題 (ID: ${q.id})</b></p><p>${formattedQuestion}</p>${subQ}`;
+      const div = document.getElementById('quiz');
+      const formattedQuestion = (q.question || '').replace(/\n/g, '<br>');
+      const subQ = q.sub_question ? `<pre style="white-space: pre-wrap;">${q.sub_question}</pre>` : '';
+      const questionText = `<p><b>第${seq}題 (ID: ${q.id})</b></p><p>${formattedQuestion}</p>${subQ}`;
 
-  // 排序題處理
-  if (q.category === '排序題') {
-    const letters = q.answer.split('');
-    const optionsHtml = letters
-      .map((l, i) => {
-        const opt = q['option_' + l.toLowerCase()];
-        return opt
-          ? `<li class="sortable-item" draggable="true" data-val="${l}">(${l}) ${opt}</li>`
-          : '';
-      })
-      .join('');
+      if (q.category === '排序題') {
+        const letters = q.answer.split('');
+        const optionsHtml = letters.map((l) => {
+          const opt = q['option_' + l.toLowerCase()];
+          return opt ? `<li class="sortable-item" draggable="true" data-val="${l}">(${l}) ${opt}</li>` : '';
+        }).join('');
 
-    div.innerHTML = `
-      ${questionText}
-      <p><b>請依照優先順序拖拉排列：</b></p>
-      <ul id="sortable" class="sortable-list">${optionsHtml}</ul>
-      <button onclick="submitAns(${currentIndex - 1}, '${q.answer}')">送出</button>
-      <style>
-        .sortable-list { list-style: none; padding: 0; }
-        .sortable-item { background: #eee; margin: 4px 0; padding: 8px; border-radius: 4px; cursor: grab; }
-        .sortable-item.dragging { opacity: 0.5; }
-      </style>
-    `;
+        div.innerHTML = `
+          ${questionText}
+          <p><b>請依照優先順序拖拉排列：</b></p>
+          <ul id="sortable" class="sortable-list">${optionsHtml}</ul>
+          <button onclick="submitAns(${currentIndex - 1}, '${q.answer}')">送出</button>
+        `;
+        enableSortable();
+        return;
+      }
 
-    enableSortable(); // 啟動拖拉功能
-    return;
-  }
-
-  // 一般選擇題
-  const opts = ['a', 'b', 'c', 'd', 'e', 'f', 'g']
-    .map((l) =>
-      q['option_' + l]
-        ? `<label><input type="${
-            q.category === '複選題' ? 'checkbox' : 'radio'
-          }" name="ans" value="${l}"> (${l.toUpperCase()}) ${q['option_' + l]}</label><br>`
+      // 單選或複選題
+      const opts = ['a','b','c','d','e','f','g'].map((l) =>
+        q['option_' + l] ? 
+        `<label><input type="${q.category === '複選題' ? 'checkbox' : 'radio'}" name="ans" value="${l}"> (${l.toUpperCase()}) ${q['option_' + l]}</label><br>` 
         : ''
-    )
-    .filter(Boolean)
-    .join('');
+      ).join('');
 
-  div.innerHTML = `
-    ${questionText}
-    ${opts}
-    <button onclick="submitAns(${currentIndex - 1}, '${q.answer}')">送出</button>
-  `;
-}
+      div.innerHTML = `
+        ${questionText}
+        ${opts}
+        <button onclick="submitAns(${currentIndex}, '${q.answer}')">送出</button>
 
-function submitAns(id, answer) {
-  const q = queue[id];
-
-  if (q.category === '排序題') {
-    const sortedEls = document.querySelectorAll('.sortable-item');
-    const selected = Array.from(sortedEls).map((el) => el.dataset.val);
-    const correct = answer.split('');
-    const ok = selected.join('') === correct.join('');
-    if (!ok) {
-      wrongLog.push({ ...q, yourAnswer: selected.join('') });
+       
+      `;
     }
-    nextQuestion();
-    return;
-  }
-
-  // 其餘選擇題處理
-  const selected = Array.from(document.querySelectorAll('input[name=ans]:checked')).map(
-    (el) => el.value
-  );
-  const correct = answer.split(',');
-  const ok = correct.length === selected.length && correct.every((c) => selected.includes(c));
-  if (!ok) {
-    wrongLog.push({ ...q, yourAnswer: selected.join(',') });
-  }
-  nextQuestion();
-}
-
-// 拖拉排序功能
-function enableSortable() {
-  const list = document.getElementById('sortable');
-  let draggedItem = null;
-
-  list.addEventListener('dragstart', (e) => {
-    draggedItem = e.target;
-    e.target.classList.add('dragging');
-  });
-
-  list.addEventListener('dragend', (e) => {
-    e.target.classList.remove('dragging');
-    draggedItem = null;
-  });
-
-  list.addEventListener('dragover', (e) => {
-    e.preventDefault();
-    const afterElement = getDragAfterElement(list, e.clientY);
-    if (afterElement == null) {
-      list.appendChild(draggedItem);
-    } else {
-      list.insertBefore(draggedItem, afterElement);
-    }
-  });
-
-  function getDragAfterElement(container, y) {
-    const draggableElements = [
-      ...container.querySelectorAll('.sortable-item:not(.dragging)'),
-    ];
-
-    return draggableElements.reduce(
-      (closest, child) => {
-        const box = child.getBoundingClientRect();
-        const offset = y - box.top - box.height / 2;
-        if (offset < 0 && offset > closest.offset) {
-          return { offset: offset, element: child };
-        } else {
-          return closest;
-        }
-      },
-      { offset: Number.NEGATIVE_INFINITY }
-    ).element;
-  }
-}
-
 
     function submitAns(id, answer) {
       const q = queue[id];
-      const selected = Array.from(document.querySelectorAll('input[name=ans]:checked')).map(
-        (el) => el.value
-      );
+
+      if (q.category === '排序題') {
+        const sortedEls = document.querySelectorAll('.sortable-item');
+        const selected = Array.from(sortedEls).map((el) => el.dataset.val);
+        const correct = answer.split('');
+        const ok = selected.join('') === correct.join('');
+        if (!ok) {
+          wrongLog.push({ ...q, yourAnswer: selected.join('') });
+        }
+        nextQuestion();
+        return;
+      }
+
+      const selected = Array.from(document.querySelectorAll('input[name=ans]:checked')).map(el => el.value);
       const correct = answer.split(',');
-      const ok =
-        correct.length === selected.length && correct.every((c) => selected.includes(c));
+      const ok = correct.length === selected.length && correct.every(c => selected.includes(c));
       if (!ok) {
         wrongLog.push({ ...q, yourAnswer: selected.join(',') });
-        // 錯題不放回隊列，直接略過
       }
       nextQuestion();
+    }
+
+    function enableSortable() {
+      const list = document.getElementById('sortable');
+      let draggedItem = null;
+
+      list.addEventListener('dragstart', (e) => {
+        draggedItem = e.target;
+        e.target.classList.add('dragging');
+      });
+
+      list.addEventListener('dragend', (e) => {
+        e.target.classList.remove('dragging');
+        draggedItem = null;
+      });
+
+      list.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        const afterElement = getDragAfterElement(list, e.clientY);
+        if (!afterElement) {
+          list.appendChild(draggedItem);
+        } else {
+          list.insertBefore(draggedItem, afterElement);
+        }
+      });
+
+      function getDragAfterElement(container, y) {
+        const elements = [...container.querySelectorAll('.sortable-item:not(.dragging)')];
+        return elements.reduce((closest, child) => {
+          const box = child.getBoundingClientRect();
+          const offset = y - box.top - box.height / 2;
+          if (offset < 0 && offset > closest.offset) {
+            return { offset: offset, element: child };
+          } else {
+            return closest;
+          }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+      }
     }
 
     function showResults() {
@@ -241,42 +212,36 @@ function enableSortable() {
   let html = `<h2>錯題清單（共 ${wrongLog.length} 題）</h2>`;
 
   wrongLog.forEach((w, i) => {
-    const formattedQuestion = (w.question || '（題目資料遺失）').replace(/\n/g, '<br>');
-    const formattedSubQuestion = (w.sub_question || '').replace(/\n/g, '<br>'); // 取得 sub_question
-    const formattedExplanation = (w.explanation || '').replace(/\n/g, '<br>');
-    const yourAnswer = w.yourAnswer || '(沒作答)';
-    const correctAnswer = w.answer || '(無資料)';
-    const isWrong = yourAnswer !== correctAnswer;
-    const yourAnswerHtml = isWrong ? `<span style="color:red;">${yourAnswer}</span>` : yourAnswer;
+    const formattedQuestion = w.question ? String(w.question).replace(/\n/g, '<br>') : '(題目資料遺失)';
+    const formattedSubQuestion = w.sub_question ? String(w.sub_question).replace(/\n/g, '<br>') : '';
+    const formattedExplanation = w.explanation ? String(w.explanation).replace(/\n/g, '<br>') : '';
+    // 下面照舊
+    const yourAnswer = (w.yourAnswer || '(沒作答)').toUpperCase();
+    const correctAnswer = (w.answer || '(無資料)').toUpperCase();
+    const isCorrect = yourAnswer === correctAnswer;
+    const answerColor = isCorrect ? 'black' : 'red';
 
-    // 顯示選項
     const optionsHtml = ['a','b','c','d','e','f','g'].map(l => {
       const opt = w['option_' + l];
       return opt ? `(${l.toUpperCase()}) ${opt}` : '';
     }).filter(Boolean).join('<br>');
 
-    // 顯示來源工作表與題目 ID
-    const source = w.sourceSheet || '未知工作表';
-    const id = w.id || '未提供';
-
-    html += `<div style="margin-bottom: 1em; border-bottom: 1px solid #ccc; padding-bottom: 1em;">
-      <p><b>${i + 1}.</b> ${formattedQuestion}</p>
-      ${formattedSubQuestion ? `<p style="margin-left:1em; font-style: italic; color: #555;">${formattedSubQuestion}</p>` : ''}
-      <p><b>選項：</b><br>${optionsHtml}</p>
-      <p>你答：${yourAnswerHtml}</p>
-      <p>正確：${correctAnswer}</p>
-      ${formattedExplanation ? `<p>解析：${formattedExplanation}</p>` : ''}
-      <p><b>來源：</b>${source}（ID: ${id}）</p>
-    </div>`;
+    html += `
+      <div style="margin-bottom: 1em; border-bottom: 1px solid #ccc; padding-bottom: 1em;">
+        <p><b>${i + 1}.</b> ${formattedQuestion}</p>
+        ${formattedSubQuestion ? `<p style="margin-left:1em; font-style: italic; color: #555;">${formattedSubQuestion}</p>` : ''}
+        <p style="margin-left:1em;">選項：<br>${optionsHtml}</p>
+        <p style="margin-left:1em;">你的答案：<span style="color:${answerColor}; font-weight:bold;">${yourAnswer}</span></p>
+        <p style="margin-left:1em;">正確答案：<b>${correctAnswer}</b></p>
+        ${formattedExplanation ? `<p style="margin-left:1em; color: #888;">解析：${formattedExplanation}</p>` : ''}
+        <p style="margin-left:1em; font-size: 12px;">來源：${w.sourceSheet || '未知'}｜題號 ID：${w.id || '未提供'}</p>
+      </div>
+    `;
   });
 
-  html += `<button onclick="resetQuiz()">再來一次</button>`;
+  html += `<button onclick="resetQuiz()">重新作答</button>`;
   div.innerHTML = html;
 }
-
-
-
-
 
 
   </script>
