@@ -3,6 +3,26 @@
 <head>
   <meta charset="UTF-8" />
   <title>Python 題庫系統</title>
+  <style>
+  button {
+    padding: 12px 24px;
+    font-size: 16px;
+    width: 100%;
+    max-width: 300px;
+    display: block;
+    margin: 1em auto;
+    border-radius: 8px;
+    background-color: #4CAF50;
+    color: white;
+    border: none;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background-color: #45a049;
+  }
+</style>
+
 </head>
 <body>
   <h1>Python 題庫練習</h1>
@@ -40,18 +60,20 @@
     }
 
     async function startQuiz() {
-      const sel = document.getElementById('sheetSelector').value;
-      let arr = [];
-      if (sel === 'ALL') {
-        const a1 = await loadSheet('ITS Python 國際認證題庫 (一)');
-        const a2 = await loadSheet('ITS Python 國際認證題庫 (二)');
-        arr = a1.concat(a2);
-      } else {
-        arr = await loadSheet(sel);
-      }
-      questions = arr;
-      resetQuiz();
-    }
+  const sel = document.getElementById('sheetSelector').value;
+  let arr = [];
+  if (sel === 'ALL') {
+    const a1 = await loadSheet('ITS Python 國際認證題庫 (一)');
+    const a2 = await loadSheet('ITS Python 國際認證題庫 (二)');
+    arr = a1.map(q => ({ ...q, sourceSheet: 'ITS Python 國際認證題庫 (一)' }))
+      .concat(a2.map(q => ({ ...q, sourceSheet: 'ITS Python 國際認證題庫 (二)' })));
+  } else {
+    arr = (await loadSheet(sel)).map(q => ({ ...q, sourceSheet: sel }));
+  }
+  questions = arr;
+  resetQuiz();
+}
+
 
     function resetQuiz() {
       wrongLog = [];
@@ -217,27 +239,40 @@ function enableSortable() {
     function showResults() {
   const div = document.getElementById('quiz');
   let html = `<h2>錯題清單（共 ${wrongLog.length} 題）</h2>`;
+
   wrongLog.forEach((w, i) => {
     const formattedQuestion = (w.question || '（題目資料遺失）').replace(/\n/g, '<br>');
     const formattedExplanation = (w.explanation || '').replace(/\n/g, '<br>');
     const yourAnswer = w.yourAnswer || '(沒作答)';
     const correctAnswer = w.answer || '(無資料)';
-
     const isWrong = yourAnswer !== correctAnswer;
-    const yourAnswerHtml = isWrong
-      ? `<span style="color:red;">${yourAnswer}</span>`
-      : yourAnswer;
+    const yourAnswerHtml = isWrong ? `<span style="color:red;">${yourAnswer}</span>` : yourAnswer;
 
-    html += `<div>
+    // 顯示選項
+    const optionsHtml = ['a','b','c','d','e','f','g'].map(l => {
+      const opt = w['option_' + l];
+      return opt ? `(${l.toUpperCase()}) ${opt}` : '';
+    }).filter(Boolean).join('<br>');
+
+    // 顯示來源工作表與題目 ID
+    const source = w.sourceSheet || '未知工作表';
+    const id = w.id || '未提供';
+
+    html += `<div style="margin-bottom: 1em; border-bottom: 1px solid #ccc; padding-bottom: 1em;">
       <p><b>${i + 1}.</b> ${formattedQuestion}</p>
+      <p><b>選項：</b><br>${optionsHtml}</p>
       <p>你答：${yourAnswerHtml}</p>
       <p>正確：${correctAnswer}</p>
       ${formattedExplanation ? `<p>解析：${formattedExplanation}</p>` : ''}
+      <p><b>來源：</b>${source}（ID: ${id}）</p>
     </div>`;
   });
+
   html += `<button onclick="resetQuiz()">再來一次</button>`;
   div.innerHTML = html;
 }
+
+
 
 
 
